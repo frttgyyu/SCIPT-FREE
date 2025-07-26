@@ -1,0 +1,718 @@
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/jensonhirst/Orion/main/source')))()
+local Window = OrionLib:MakeWindow({Name = "FREE TEST BETA | ARSENAL", HidePremium = false, SaveConfig = true, ConfigFolder = "ARSENAL CHEAT HUB BETA"})
+
+OrionLib:MakeNotification({
+	Name = "Title!",
+	Content = "Notification content... what will it say??",
+	Image = "rbxassetid://4483345998",
+	Time = 5
+})
+
+local Tab = Window:MakeTab({
+	Name = "VISUALS",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
+})
+
+local Section = Tab:AddSection({
+	Name = "VISUALS"
+})
+
+Tab:AddButton({
+	Name = "Box",
+	Callback = function()
+		local lplr = game.Players.LocalPlayer
+		local camera = workspace.CurrentCamera
+		local worldToViewportPoint = camera.WorldToViewportPoint
+
+		local function createESP(player)
+			local boxOutline = Drawing.new("Square")
+			boxOutline.Thickness = 3
+			boxOutline.Transparency = 1
+			boxOutline.Color = Color3.fromRGB(0, 0, 0)
+			boxOutline.Filled = false
+			boxOutline.Visible = false
+
+			local box = Drawing.new("Square")
+			box.Thickness = 1
+			box.Transparency = 1
+			box.Color = Color3.fromRGB(255, 255, 255)
+			box.Filled = false
+			box.Visible = false
+
+			game:GetService("RunService").RenderStepped:Connect(function()
+				if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Head") and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
+					local rootPos, onScreen = worldToViewportPoint(camera, player.Character.HumanoidRootPart.Position)
+					local headPos = worldToViewportPoint(camera, player.Character.Head.Position + Vector3.new(0, 0.5, 0))
+					local legPos = worldToViewportPoint(camera, player.Character.HumanoidRootPart.Position - Vector3.new(0, 3, 0))
+
+					if onScreen then
+						local boxHeight = math.abs(headPos.Y - legPos.Y)
+						local boxWidth = boxHeight / 2
+						local boxX = rootPos.X - boxWidth / 2
+						local boxY = rootPos.Y - boxHeight / 2
+
+						local size = Vector2.new(boxWidth, boxHeight)
+						local pos = Vector2.new(boxX, boxY)
+
+						boxOutline.Size = size
+						boxOutline.Position = pos
+						boxOutline.Visible = true
+
+						box.Size = size
+						box.Position = pos
+						box.Visible = true
+					else
+						box.Visible = false
+						boxOutline.Visible = false
+					end
+				else
+					box.Visible = false
+					boxOutline.Visible = false
+				end
+			end)
+		end
+
+		-- Ajout des joueurs actuels
+		for _, player in pairs(game.Players:GetPlayers()) do
+			if player ~= lplr then
+				createESP(player)
+			end
+		end
+
+		-- Ajout des nouveaux joueurs
+		game.Players.PlayerAdded:Connect(function(player)
+			createESP(player)
+		end)
+	end
+})
+
+
+Tab:AddButton({
+	Name = "Snaplines",
+	Callback = function()
+		local lplr = game.Players.LocalPlayer
+		local camera = workspace.CurrentCamera
+		local worldToViewportPoint = camera.WorldToViewportPoint
+
+		_G.TeamCheck = false -- mettre true si tu veux ignorer les coéquipiers
+
+		for i, v in pairs(game.Players:GetPlayers()) do
+			if v ~= lplr then
+				local Tracer = Drawing.new("Line")
+				Tracer.Visible = false
+				Tracer.Color = Color3.new(1, 1, 1) -- blanc
+				Tracer.Thickness = 1
+				Tracer.Transparency = 1
+
+				coroutine.wrap(function()
+					game:GetService("RunService").RenderStepped:Connect(function()
+						if v.Character and v.Character:FindFirstChild("Humanoid") and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 then
+							local Vector, OnScreen = worldToViewportPoint(camera, v.Character.HumanoidRootPart.Position)
+
+							if OnScreen then
+								Tracer.From = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y) -- ligne depuis le bas
+								Tracer.To = Vector2.new(Vector.X, Vector.Y)
+
+								if _G.TeamCheck and v.TeamColor == lplr.TeamColor then
+									Tracer.Visible = false
+								else
+									Tracer.Visible = true
+								end
+							else
+								Tracer.Visible = false
+							end
+						else
+							Tracer.Visible = false
+						end
+					end)
+				end)()
+			end
+		end
+	end    
+})
+
+Tab:AddButton({
+    Name = "Health Bar",
+    Callback = function()
+        local player = game:GetService("Players").LocalPlayer
+        local camera = workspace.CurrentCamera
+
+        local black = Color3.fromRGB(0, 0 ,0)
+
+        local function NewLine(thickness, color)
+            local line = Drawing.new("Line")
+            line.Visible = false
+            line.From = Vector2.new(0, 0)
+            line.To = Vector2.new(0, 0)
+            line.Color = color 
+            line.Thickness = thickness
+            line.Transparency = 1
+            return line
+        end
+
+        local function Visibility(state, lib)
+            for _, x in pairs(lib) do
+                x.Visible = state
+            end
+        end
+
+        local function ESP(plr)
+            local library = {
+                -- Box & tracer (si besoin, sinon tu peux enlever)
+                tracer = NewLine(1, Color3.fromRGB(255, 0, 0)),
+                blacktracer = NewLine(2, black),
+                box = NewLine(1, Color3.fromRGB(255, 0, 0)),
+                black = NewLine(2, black),
+
+                -- Health bar (background + fill)
+                healthbar = NewLine(3, black),
+                greenhealth = NewLine(1.5, Color3.fromRGB(0, 255, 0)),
+            }
+
+            local function Updater()
+                local connection
+                connection = game:GetService("RunService").RenderStepped:Connect(function()
+                    if plr.Character 
+                    and plr.Character:FindFirstChild("Humanoid") 
+                    and plr.Character:FindFirstChild("HumanoidRootPart") 
+                    and plr.Character.Humanoid.Health > 0 
+                    and plr.Character:FindFirstChild("Head") then
+                        
+                        local rootPos, onScreen = camera:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
+                        if onScreen then
+                            local headPos = camera:WorldToViewportPoint(plr.Character.Head.Position)
+                            local DistanceY = math.clamp((Vector2.new(headPos.X, headPos.Y) - Vector2.new(rootPos.X, rootPos.Y)).magnitude, 2, math.huge)
+
+                            -- Health bar positions
+                            local xPos = rootPos.X - DistanceY - 4
+                            local topY = rootPos.Y - DistanceY * 2
+                            local bottomY = rootPos.Y + DistanceY * 2
+
+                            local totalLength = bottomY - topY
+                            local healthRatio = plr.Character.Humanoid.Health / plr.Character.Humanoid.MaxHealth
+                            local greenLength = totalLength * healthRatio
+
+                            -- Update black background bar
+                            library.healthbar.From = Vector2.new(xPos, bottomY)
+                            library.healthbar.To = Vector2.new(xPos, topY)
+                            library.healthbar.Visible = true
+
+                            -- Update green health bar
+                            library.greenhealth.From = Vector2.new(xPos, bottomY)
+                            library.greenhealth.To = Vector2.new(xPos, bottomY - greenLength)
+                            library.greenhealth.Color = Color3.fromRGB(255, 0, 0):Lerp(Color3.fromRGB(0, 255, 0), healthRatio)
+                            library.greenhealth.Visible = true
+
+                            -- Tu peux aussi gérer la box, tracers, etc. ici si tu veux
+
+                        else
+                            -- Hors écran
+                            library.healthbar.Visible = false
+                            library.greenhealth.Visible = false
+                        end
+                    else
+                        library.healthbar.Visible = false
+                        library.greenhealth.Visible = false
+                    end
+
+                    -- Déconnexion propre
+                    if not game.Players:FindFirstChild(plr.Name) then
+                        connection:Disconnect()
+                    end
+                end)
+            end
+            coroutine.wrap(Updater)()
+        end
+
+        -- ESP pour tous les joueurs sauf localplayer
+        for _, plr in pairs(game:GetService("Players"):GetPlayers()) do
+            if plr ~= player then
+                coroutine.wrap(ESP)(plr)
+            end
+        end
+
+        -- ESP pour les nouveaux joueurs
+        game:GetService("Players").PlayerAdded:Connect(function(plr)
+            if plr ~= player then
+                coroutine.wrap(ESP)(plr)
+            end
+        end)
+    end
+})
+
+
+
+
+
+Tab:AddButton({
+	Name = "Radar",
+	Callback = function()
+		-- Made by Blissful#4992
+		local Players = game:service("Players")
+		local Player = Players.LocalPlayer
+		local Mouse = Player:GetMouse()
+		local Camera = game:service("Workspace").CurrentCamera
+		local RS = game:service("RunService")
+		local UIS = game:service("UserInputService")
+
+		repeat wait() until Player.Character ~= nil and Player.Character.PrimaryPart ~= nil
+
+		local LerpColorModule = loadstring(game:HttpGet("https://pastebin.com/raw/wRnsJeid"))()
+		local HealthBarLerp = LerpColorModule:Lerp(Color3.fromRGB(255, 0, 0), Color3.fromRGB(0, 255, 0))
+
+		local function NewCircle(Transparency, Color, Radius, Filled, Thickness)
+			local c = Drawing.new("Circle")
+			c.Transparency = Transparency
+			c.Color = Color
+			c.Visible = false
+			c.Thickness = Thickness
+			c.Position = Vector2.new(0, 0)
+			c.Radius = Radius
+			c.NumSides = math.clamp(Radius*55/100, 10, 75)
+			c.Filled = Filled
+			return c
+		end
+
+		local RadarInfo = {
+			Position = Vector2.new(200, 200),
+			Radius = 100,
+			Scale = 1,
+			RadarBack = Color3.fromRGB(10, 10, 10),
+			RadarBorder = Color3.fromRGB(75, 75, 75),
+			LocalPlayerDot = Color3.fromRGB(255, 255, 255),
+			PlayerDot = Color3.fromRGB(60, 170, 255),
+			Team = Color3.fromRGB(0, 255, 0),
+			Enemy = Color3.fromRGB(255, 0, 0),
+			Health_Color = true,
+			Team_Check = true
+		}
+
+		local RadarBackground = NewCircle(0.9, RadarInfo.RadarBack, RadarInfo.Radius, true, 1)
+		RadarBackground.Visible = true
+		RadarBackground.Position = RadarInfo.Position
+
+		local RadarBorder = NewCircle(0.75, RadarInfo.RadarBorder, RadarInfo.Radius, false, 3)
+		RadarBorder.Visible = true
+		RadarBorder.Position = RadarInfo.Position
+
+		local function GetRelative(pos)
+			local char = Player.Character
+			if char and char.PrimaryPart then
+				local pmpart = char.PrimaryPart
+				local camerapos = Vector3.new(Camera.CFrame.Position.X, pmpart.Position.Y, Camera.CFrame.Position.Z)
+				local newcf = CFrame.new(pmpart.Position, camerapos)
+				local r = newcf:PointToObjectSpace(pos)
+				return r.X, r.Z
+			else
+				return 0, 0
+			end
+		end
+
+		local function PlaceDot(plr)
+			local PlayerDot = NewCircle(1, RadarInfo.PlayerDot, 3, true, 1)
+
+			local function Update()
+				local c 
+				c = RS.RenderStepped:Connect(function()
+					local char = plr.Character
+					if char and char:FindFirstChildOfClass("Humanoid") and char.PrimaryPart and char:FindFirstChildOfClass("Humanoid").Health > 0 then
+						local hum = char:FindFirstChildOfClass("Humanoid")
+						local scale = RadarInfo.Scale
+						local relx, rely = GetRelative(char.PrimaryPart.Position)
+						local newpos = RadarInfo.Position - Vector2.new(relx * scale, rely * scale) 
+
+						if (newpos - RadarInfo.Position).magnitude < RadarInfo.Radius-2 then 
+							PlayerDot.Radius = 3   
+							PlayerDot.Position = newpos
+							PlayerDot.Visible = true
+						else 
+							local dist = (RadarInfo.Position - newpos).magnitude
+							local calc = (RadarInfo.Position - newpos).unit * (dist - RadarInfo.Radius)
+							local inside = Vector2.new(newpos.X + calc.X, newpos.Y + calc.Y)
+							PlayerDot.Radius = 2
+							PlayerDot.Position = inside
+							PlayerDot.Visible = true
+						end
+
+						PlayerDot.Color = RadarInfo.PlayerDot
+						if RadarInfo.Team_Check then
+							if plr.TeamColor == Player.TeamColor then
+								PlayerDot.Color = RadarInfo.Team
+							else
+								PlayerDot.Color = RadarInfo.Enemy
+							end
+						end
+
+						if RadarInfo.Health_Color then
+							PlayerDot.Color = HealthBarLerp(hum.Health / hum.MaxHealth)
+						end
+					else 
+						PlayerDot.Visible = false
+						if Players:FindFirstChild(plr.Name) == nil then
+							PlayerDot:Remove()
+							c:Disconnect()
+						end
+					end
+				end)
+			end
+			coroutine.wrap(Update)()
+		end
+
+		for _,v in pairs(Players:GetPlayers()) do
+			if v ~= Player then
+				PlaceDot(v)
+			end
+		end
+
+		local function NewLocalDot()
+			local d = Drawing.new("Triangle")
+			d.Visible = true
+			d.Thickness = 1
+			d.Filled = true
+			d.Color = RadarInfo.LocalPlayerDot
+			d.PointA = RadarInfo.Position + Vector2.new(0, -6)
+			d.PointB = RadarInfo.Position + Vector2.new(-3, 6)
+			d.PointC = RadarInfo.Position + Vector2.new(3, 6)
+			return d
+		end
+
+		local LocalPlayerDot = NewLocalDot()
+
+		Players.PlayerAdded:Connect(function(v)
+			if v ~= Player then
+				PlaceDot(v)
+			end
+			LocalPlayerDot:Remove()
+			LocalPlayerDot = NewLocalDot()
+		end)
+
+		coroutine.wrap(function()
+			RS.RenderStepped:Connect(function()
+				if LocalPlayerDot then
+					LocalPlayerDot.Color = RadarInfo.LocalPlayerDot
+					LocalPlayerDot.PointA = RadarInfo.Position + Vector2.new(0, -6)
+					LocalPlayerDot.PointB = RadarInfo.Position + Vector2.new(-3, 6)
+					LocalPlayerDot.PointC = RadarInfo.Position + Vector2.new(3, 6)
+				end
+				RadarBackground.Position = RadarInfo.Position
+				RadarBackground.Radius = RadarInfo.Radius
+				RadarBackground.Color = RadarInfo.RadarBack
+
+				RadarBorder.Position = RadarInfo.Position
+				RadarBorder.Radius = RadarInfo.Radius
+				RadarBorder.Color = RadarInfo.RadarBorder
+			end)
+		end)()
+
+		-- Draggable radar
+		local inset = game:service("GuiService"):GetGuiInset()
+		local dragging = false
+		local offset = Vector2.new(0, 0)
+
+		UIS.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 and (Vector2.new(Mouse.X, Mouse.Y + inset.Y) - RadarInfo.Position).magnitude < RadarInfo.Radius then
+				offset = RadarInfo.Position - Vector2.new(Mouse.X, Mouse.Y)
+				dragging = true
+			end
+		end)
+
+		UIS.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging = false
+			end
+		end)
+
+		coroutine.wrap(function()
+			local dot = NewCircle(1, Color3.fromRGB(255, 255, 255), 3, true, 1)
+			RS.RenderStepped:Connect(function()
+				if (Vector2.new(Mouse.X, Mouse.Y + inset.Y) - RadarInfo.Position).magnitude < RadarInfo.Radius then
+					dot.Position = Vector2.new(Mouse.X, Mouse.Y + inset.Y)
+					dot.Visible = true
+				else 
+					dot.Visible = false
+				end
+				if dragging then
+					RadarInfo.Position = Vector2.new(Mouse.X, Mouse.Y) + offset
+				end
+			end)
+		end)()
+	end
+})
+
+local Tab = Window:MakeTab({
+	Name = "Exploits ( BANNABLE )",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
+})
+
+Tab:AddButton({
+    Name = "Fov Changer 120",
+    Callback = function()
+        print("button pressed")
+
+        local camera = workspace.Camera
+        local normalFOV = 70 -- la valeur normale du FOV à remettre (à adapter si tu veux)
+
+        if _G.FOVChangerConnection then
+            -- Si déjà activé, on désactive et remet le FOV normal
+            _G.FOVChangerConnection:Disconnect()
+            _G.FOVChangerConnection = nil
+            camera.FieldOfView = normalFOV
+            print("FOV changer désactivé, FOV remis à normal")
+        else
+            -- Sinon on active la boucle de maintien du FOV à 120
+            _G.FOVChangerConnection = camera:GetPropertyChangedSignal("FieldOfView"):Connect(function()
+                if camera.FieldOfView ~= 120 then
+                    camera.FieldOfView = 120
+                end
+            end)
+            camera.FieldOfView = 120
+            print("FOV changer activé à 120")
+        end
+    end    
+})
+
+Tab:AddButton({
+	Name = "Fly",
+	Callback = function()
+		print("Fly activé par bouton")
+
+		local UIS = game:GetService("UserInputService")
+		local RunService = game:GetService("RunService")
+		local Players = game:GetService("Players")
+
+		local player = Players.LocalPlayer
+		local character = player.Character or player.CharacterAdded:Wait()
+		local hrp = character:WaitForChild("HumanoidRootPart")
+
+		local flying = true
+		local speed = 60
+
+		local keysDown = {}
+		local bodyGyro = Instance.new("BodyGyro")
+		bodyGyro.P = 9e4
+		bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+		bodyGyro.CFrame = hrp.CFrame
+		bodyGyro.Parent = hrp
+
+		local bodyVelocity = Instance.new("BodyVelocity")
+		bodyVelocity.Velocity = Vector3.zero
+		bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+		bodyVelocity.Parent = hrp
+
+		local connectionInputBegan
+		local connectionInputEnded
+		local connectionRenderStepped
+
+		connectionInputBegan = UIS.InputBegan:Connect(function(input, gpe)
+			if gpe then return end
+			keysDown[input.KeyCode] = true
+
+			-- Touche F pour désactiver le fly
+			if input.KeyCode == Enum.KeyCode.F then
+				flying = false
+				if bodyGyro then bodyGyro:Destroy() end
+				if bodyVelocity then bodyVelocity:Destroy() end
+
+				if connectionInputBegan then connectionInputBegan:Disconnect() end
+				if connectionInputEnded then connectionInputEnded:Disconnect() end
+				if connectionRenderStepped then connectionRenderStepped:Disconnect() end
+
+				print("Fly désactivé")
+			end
+		end)
+
+		connectionInputEnded = UIS.InputEnded:Connect(function(input)
+			keysDown[input.KeyCode] = false
+		end)
+
+		connectionRenderStepped = RunService.RenderStepped:Connect(function()
+			if flying and bodyVelocity and bodyGyro then
+				local cam = workspace.CurrentCamera
+				local direction = Vector3.zero
+
+				if keysDown[Enum.KeyCode.Z] then
+					direction += cam.CFrame.LookVector
+				end
+				if keysDown[Enum.KeyCode.S] then
+					direction -= cam.CFrame.LookVector
+				end
+				if keysDown[Enum.KeyCode.Q] then
+					direction -= cam.CFrame.RightVector
+				end
+				if keysDown[Enum.KeyCode.D] then
+					direction += cam.CFrame.RightVector
+				end
+				if keysDown[Enum.KeyCode.Space] then
+					direction += cam.CFrame.UpVector
+				end
+				if keysDown[Enum.KeyCode.LeftShift] then
+					direction -= cam.CFrame.UpVector
+				end
+
+				if direction.Magnitude > 0 then
+					bodyVelocity.Velocity = direction.Unit * speed
+				else
+					bodyVelocity.Velocity = Vector3.zero
+				end
+
+				bodyGyro.CFrame = cam.CFrame
+			end
+		end)
+	end
+})
+
+Tab:AddButton({
+    Name = "No Recoil",
+    Callback = function()
+        --[[
+        Lennys Scripts by Lenny. (STEAM_0:0:30422103)
+        This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/.
+        Credit to the author must be given when using/sharing this work or derivative work from it.
+        ]]
+
+        CreateClientConVar("lenny_norecoil", 1)
+
+
+        local function norecoil()
+            if LocalPlayer():GetActiveWeapon():Clip1() > 0  then
+                if LocalPlayer():GetActiveWeapon().Recoil then
+                    LocalPlayer():GetActiveWeapon().Recoil = 0
+                end
+                if LocalPlayer():GetActiveWeapon().Primary.Recoil then
+                    LocalPlayer():GetActiveWeapon().Primary.Recoil = 0
+                end
+            end
+        end
+
+
+
+        -- prepping
+        hook.Remove("PlayerSwitchWeapon", "norecoil")
+
+        if GetConVarNumber("lenny_norecoil") == 1 then
+            hook.Add("PlayerSwitchWeapon", "norecoil", norecoil)
+        end
+        --end of prep
+
+        cvars.AddChangeCallback("lenny_norecoil", function() 
+            if GetConVarNumber("lenny_norecoil") == 1 then
+                hook.Add("PlayerSwitchWeapon", "norecoil", norecoil)
+            else
+                hook.Remove("PlayerSwitchWeapon", "norecoil")
+            end
+        end)
+
+
+        MsgC(Color(0,255,0), "\nLennys NoRecoil initialized!\n")
+    end
+})
+
+
+
+local Tab = Window:MakeTab({
+	Name = "Aimbot",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
+})
+
+TTab:AddButton({
+    Name = "AIMBOT + FOV",
+    Callback = function()
+        local Camera = workspace.CurrentCamera
+        local Players = game:GetService("Players")
+        local RunService = game:GetService("RunService")
+        local UserInputService = game:GetService("UserInputService")
+        local TweenService = game:GetService("TweenService")
+        local LocalPlayer = Players.LocalPlayer
+        local Holding = false
+
+        _G.AimbotEnabled = true
+        _G.TeamCheck = true -- Active le team check
+        _G.AimPart = "Head"
+        _G.Sensitivity = 0
+
+        _G.CircleSides = 64
+        _G.CircleColor = Color3.fromRGB(255, 255, 255)
+        _G.CircleTransparency = 0.7
+        _G.CircleRadius = 80
+        _G.CircleFilled = false
+        _G.CircleVisible = true
+        _G.CircleThickness = 0
+
+        local FOVCircle = Drawing.new("Circle")
+        FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+        FOVCircle.Radius = _G.CircleRadius
+        FOVCircle.Filled = _G.CircleFilled
+        FOVCircle.Color = _G.CircleColor
+        FOVCircle.Visible = _G.CircleVisible
+        FOVCircle.Transparency = _G.CircleTransparency
+        FOVCircle.NumSides = _G.CircleSides
+        FOVCircle.Thickness = _G.CircleThickness
+
+        local function GetClosestPlayer()
+            local MaximumDistance = _G.CircleRadius
+            local Target = nil
+
+            for _, v in next, Players:GetPlayers() do
+                if v ~= LocalPlayer then
+                    -- TeamCheck fonctionnel
+                    local isEnemy = true
+                    if _G.TeamCheck and v.Team == LocalPlayer.Team then
+                        isEnemy = false
+                    end
+
+                    if isEnemy and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
+                        local screenPos, onScreen = Camera:WorldToViewportPoint(v.Character.HumanoidRootPart.Position)
+                        if onScreen then
+                            local mousePos = UserInputService:GetMouseLocation()
+                            local distance = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(mousePos.X, mousePos.Y)).Magnitude
+                            if distance < MaximumDistance then
+                                MaximumDistance = distance
+                                Target = v
+                            end
+                        end
+                    end
+                end
+            end
+
+            return Target
+        end
+
+        UserInputService.InputBegan:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton2 then
+                Holding = true
+            end
+        end)
+
+        UserInputService.InputEnded:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton2 then
+                Holding = false
+            end
+        end)
+
+        RunService.RenderStepped:Connect(function()
+            FOVCircle.Position = Vector2.new(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y)
+            FOVCircle.Radius = _G.CircleRadius
+            FOVCircle.Filled = _G.CircleFilled
+            FOVCircle.Color = _G.CircleColor
+            FOVCircle.Visible = _G.CircleVisible
+            FOVCircle.Transparency = _G.CircleTransparency
+            FOVCircle.NumSides = _G.CircleSides
+            FOVCircle.Thickness = _G.CircleThickness
+
+            if Holding and _G.AimbotEnabled then
+                local target = GetClosestPlayer()
+                if target and target.Character:FindFirstChild(_G.AimPart) then
+                    TweenService:Create(Camera, TweenInfo.new(_G.Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                        CFrame = CFrame.new(Camera.CFrame.Position, target.Character[_G.AimPart].Position)
+                    }):Play()
+                end
+            end
+        end)
+    end
+})
+
+
+
